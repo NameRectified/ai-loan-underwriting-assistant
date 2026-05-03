@@ -4,18 +4,14 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, f1_score
 import joblib
 
-# =========================
-# Load data
-# =========================
+
 df = pd.read_csv(
     "https://raw.githubusercontent.com/MatteoM95/Default-of-Credit-Card-Clients-Dataset-Analisys/refs/heads/main/dataset/default_of_credit_card_clients.csv"
 )
 
 df.rename(columns={"default payment next month": "target"}, inplace=True)
 
-# =========================
-# Feature selection
-# =========================
+
 selected_features = [
     "PAY_0",
     "PAY_2",
@@ -29,16 +25,11 @@ y = df["target"]
 
 print("Selected Features:", selected_features)
 
-# =========================
-# Split
-# =========================
+
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-# =========================
-# Train
-# =========================
 model = LogisticRegression(
     C=0.615848211066026,
     solver="liblinear",
@@ -49,9 +40,6 @@ model = LogisticRegression(
 
 model.fit(X_train, y_train)
 
-# =========================
-# Evaluate with custom threshold
-# =========================
 threshold = 0.5
 probs = model.predict_proba(X_test)[:, 1]
 y_pred = (probs > threshold).astype(int)
@@ -65,9 +53,7 @@ print("\nF1 Score:", f1_score(y_test, y_pred))
 print("\nClassification Report:\n")
 print(classification_report(y_test, y_pred))
 
-# =========================
-# Feature importance
-# =========================
+
 importance = dict(zip(selected_features, model.coef_[0]))
 importance = {k: abs(v) for k, v in importance.items()}
 
@@ -75,9 +61,7 @@ print("\nFeature Importance:")
 for k, v in sorted(importance.items(), key=lambda x: x[1], reverse=True):
     print(f"{k}: {v}")
 
-# =========================
-# Save model + config
-# =========================
+
 joblib.dump(
     {
         "model": model,

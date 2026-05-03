@@ -23,9 +23,7 @@ def predict():
     prob = model.predict_proba(features)[0][1]
     prediction = 1 if prob > THRESHOLD else 0
 
-    # ---------------------------
-    # Explanation logic
-    # ---------------------------
+
     pay_0 = float(data["PAY_0"])
     pay_2 = float(data["PAY_2"])
     pay_3 = float(data["PAY_3"])

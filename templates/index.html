@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Credit Risk Predictor</title>
+
+    <!-- Bootstrap CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+
+<div class="container mt-5">
+    <div class="card shadow p-4">
+
+        <h2 class="text-center mb-4">Credit Risk Prediction</h2>
+
+        <form action="/predict" method="post">
+
+    <!-- Age -->
+    <div class="mb-3">
+        <label class="form-label">Age</label>
+        <input type="number" name="AGE" class="form-control" required>
+    </div>
+
+    <div class="alert alert-info">
+        <strong>Payment Status Guide:</strong>
+        <ul class="mb-0 mt-2">
+            <li>Paid on time – No delay in payment</li>
+            <li>1 month delay – Missed payment, paid the following month</li>
+            <li>2 months delay – Payment overdue for two months</li>
+            <li>3 or more months delay – Long-term overdue payments (high risk)</li>
+        </ul>
+    </div>
+
+    <!-- PAY_0 -->
+    <div class="mb-3">
+        <label class="form-label">Last Month Payment Status</label>
+        <select name="PAY_0" class="form-select">
+            <option value="-1" selected>Paid on time</option>
+            <option value="1">1 month delay</option>
+            <option value="2">2 months delay</option>
+            <option value="3">3 or more months delay</option>
+        </select>
+    </div>
+
+    <!-- PAY_2 -->
+    <div class="mb-3">
+        <label class="form-label">2 Months Ago Payment Status</label>
+        <select name="PAY_2" class="form-select">
+            <option value="-1" selected>Paid on time</option>
+            <option value="1">1 month delay</option>
+            <option value="2">2 months delay</option>
+            <option value="3">3 or more months delay</option>
+        </select>
+    </div>
+
+    <!-- PAY_3 -->
+    <div class="mb-3">
+        <label class="form-label">3 Months Ago Payment Status</label>
+        <select name="PAY_3" class="form-select">
+            <option value="-1" selected>Paid on time</option>
+            <option value="1">1 month delay</option>
+            <option value="2">2 months delay</option>
+            <option value="3">3 or more months delay</option>
+        </select>
+    </div>
+
+    <!-- Payment amount -->
+    <div class="mb-3">
+        <label class="form-label">Last Payment Amount</label>
+        <input type="number" name="PAY_AMT1" class="form-control" value="2000" required>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100">Predict Risk</button>
+
+    </form>
+
+        {% if prediction %}
+        <div class="mt-4 text-center">
+            <h4>Prediction: 
+                <span class="text-{{ 'danger' if prediction == 'High Risk' else 'success' }}">
+                    {{ prediction }}
+                </span>
+            </h4>
+            <p>Risk Probability: {{ probability }}</p>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+</body>
+</html>

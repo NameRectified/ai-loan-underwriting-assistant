@@ -11,11 +11,40 @@ An AI-powered loan underwriting system that predicts default risk using XGBoost,
 
 - **Risk Prediction** — XGBoost classifier trained on 7 features from the UCI Credit Card Default dataset (F1 ~0.53, ROC AUC ~0.76)
 - **Explainable AI** — SHAP `TreeExplainer` shows which features drove each decision, sorted by impact
-- **LLM Risk Reports** — Generates human-readable assessment reports via Groq, Gemini, or OpenRouter (auto fallback)
+- **AI Risk Reports** — Generates human-readable assessment reports via Groq, Gemini, or OpenRouter (auto fallback)
 - **Production API** — FastAPI with Pydantic v2 validation, async lifespan, OpenAPI docs at `/docs`
 - **Minimal Frontend** — Pico CSS single-page app at `GET /`
 - **Docker Ready** — Multi-platform container with `--env-file` for secrets
 - **Tested** — pytest suite with 7 tests for predictor, SHAP, and risk labels
+
+## Why this project?
+
+Traditional credit risk models provide a prediction but often fail to explain *why* a decision was made in a way that loan officers can understand.
+
+This project combines machine learning, explainable AI (SHAP), and large language models to generate transparent underwriting reports while remaining provider-agnostic through automatic LLM fallback.
+
+## Architecture
+
+```mermaid
+flowchart TD
+
+    A[User] --> B[FastAPI API]
+
+    B --> C[Underwriting Pipeline]
+
+    C --> D[XGBoost Prediction + SHAP Explanations]
+
+    D --> E[Provider-Agnostic LLM Client]
+
+    E --> F[Groq / Gemini / OpenRouter]
+
+    F --> G[Persist Assessment]
+
+    G --> H[JSON Repository]
+
+    H --> I[API Response]
+```
+The underwriting pipeline separates prediction, explanation, report generation, and persistence into independent components, making it easy to replace models or LLM providers without modifying the orchestration logic.
 
 ## Quick Start
 
@@ -116,6 +145,28 @@ pytest tests/ -v
 ## Design Decisions
 
 See [docs/DESIGN_DECISIONS.md](docs/DESIGN_DECISIONS.md) for feature selection rationale, model evaluation, and architecture choices.
+
+
+## Tech Stack
+
+Backend: FastAPI, Pydantic
+
+Machine Learning: XGBoost, SHAP, Scikit-learn
+
+LLM: Provider-agnostic client (Groq, Gemini, OpenRouter)
+
+Testing: pytest
+
+Deployment: Docker
+
+## Dataset
+
+This project uses the UCI Credit Card Default dataset.
+
+- 30,000 loan applications
+- Binary default prediction
+- 7 engineered input features
+
 
 ## License
 

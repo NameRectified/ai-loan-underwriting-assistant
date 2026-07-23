@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Loan Underwriting Assistant</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    .risk-low { color: var(--pico-color-green); font-weight: bold; }
+    .risk-high { color: var(--pico-color-red); font-weight: bold; }
+    .positive { color: var(--pico-color-red); }
+    .negative { color: var(--pico-color-green); }
+    #report h1, #report h2, #report h3 { margin-top: 0.5em; margin-bottom: 0.25em; }
+    #report ul, #report ol { margin-bottom: 0.5em; }
+    #report li { margin-bottom: 0.25em; }
+  </style>
+</head>
+<body>
+  <main class="container" style="max-width: 800px; padding-top: 2rem;">
+    <hgroup>
+      <h1>AI Loan Underwriting Assistant</h1>
+      <p>Enter applicant details to receive a risk assessment with explanations.</p>
+    </hgroup>
+
+    <form id="appForm">
+      <div class="grid">
+        <label>
+          Credit Limit
+          <input type="number" name="limit_bal" value="200000" required>
+        </label>
+        <label>
+          Age
+          <input type="number" name="age" value="35" min="18" max="120" required>
+        </label>
+      </div>
+
+      <div class="grid">
+        <label>
+          PAY_0 (last month)
+          <select name="pay_0">
+            <option value="-1">Paid in full</option>
+            <option value="0">Revolving (min payment)</option>
+            <option value="1">1 mo delay</option>
+            <option value="2">2 mo delay</option>
+            <option value="3">3+ mo delay</option>
+          </select>
+        </label>
+        <label>
+          PAY_2 (2 months ago)
+          <select name="pay_2">
+            <option value="-1">Paid in full</option>
+            <option value="0">Revolving (min payment)</option>
+            <option value="1">1 mo delay</option>
+            <option value="2">2 mo delay</option>
+            <option value="3">3+ mo delay</option>
+          </select>
+        </label>
+        <label>
+          PAY_3 (3 months ago)
+          <select name="pay_3">
+            <option value="-1">Paid in full</option>
+            <option value="0">Revolving (min payment)</option>
+            <option value="1">1 mo delay</option>
+            <option value="2">2 mo delay</option>
+            <option value="3">3+ mo delay</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="grid">
+        <label>
+          Last Payment Amount
+          <input type="number" name="pay_amt1" value="5000" min="0" required>
+        </label>
+        <label>
+          Last Bill Amount
+          <input type="number" name="bill_amt1" value="30000" min="0" required>
+        </label>
+      </div>
+
+      <button type="submit">Assess Risk</button>
+    </form>
+
+    <div id="result" hidden>
+      <hr>
+      <article>
+        <header>
+          <h3>Risk Assessment</h3>
+        </header>
+        <p><strong>Risk:</strong> <span id="riskLabel"></span></p>
+        <p><strong>Default Probability:</strong> <span id="probability"></span></p>
+
+        <details>
+          <summary>Feature Contributions (SHAP)</summary>
+          <table>
+            <thead>
+              <tr><th>Feature</th><th>Value</th><th>SHAP</th><th>Impact</th></tr>
+            </thead>
+            <tbody id="shapTable"></tbody>
+          </table>
+        </details>
+
+        <details open>
+          <summary>Risk Report</summary>
+          <div id="report"></div>
+        </details>
+      </article>
+    </div>
+
+    <div id="error" class="notice" hidden></div>
+  </main>
+
+  <script>
+    document.getElementById("appForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const resultDiv = document.getElementById("result");
+      const errorDiv = document.getElementById("error");
+      resultDiv.hidden = true;
+      errorDiv.hidden = true;
+
+      const form = new FormData(e.target);
+      const body = {
+        limit_bal: parseFloat(form.get("limit_bal")),
+        age: parseInt(form.get("age")),
+        pay_0: parseInt(form.get("pay_0")),
+        pay_2: parseInt(form.get("pay_2")),
+        pay_3: parseInt(form.get("pay_3")),
+        pay_amt1: parseFloat(form.get("pay_amt1")),
+        bill_amt1: parseFloat(form.get("bill_amt1")),
+      };
+
+      try {
+        const res = await fetch("/api/v1/predict", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || "Request failed");
+        }
+
+        const data = await res.json();
+
+        const riskLabel = document.getElementById("riskLabel");
+        riskLabel.textContent = data.risk;
+        riskLabel.className = data.risk === "Low" ? "risk-low" : "risk-high";
+
+        document.getElementById("probability").textContent =
+          (data.default_probability * 100).toFixed(1) + "%";
+
+        const shapBody = document.getElementById("shapTable");
+        shapBody.innerHTML = "";
+        for (const e of data.shap_explanations) {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${e.feature_name}</td>
+            <td>${e.feature_value}</td>
+            <td class="${e.shap_value >= 0 ? "positive" : "negative"}">${e.shap_value >= 0 ? "+" : ""}${e.shap_value.toFixed(4)}</td>
+            <td>${e.impact.replace("_", " ")}</td>
+          `;
+          shapBody.appendChild(row);
+        }
+
+        document.getElementById("report").innerHTML =
+          marked.parse(data.risk_report || "*(Report generation unavailable)*");
+
+        resultDiv.hidden = false;
+      } catch (err) {
+        errorDiv.textContent = "Error: " + err.message;
+        errorDiv.hidden = false;
+      }
+    });
+  </script>
+</body>
+</html>

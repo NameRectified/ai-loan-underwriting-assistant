@@ -1,163 +1,122 @@
-# Credit Risk Prediction App
+# AI Loan Underwriting Assistant
 
-A machine learning web application that predicts whether a user is likely to default on credit payments based on recent repayment behavior.
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-teal.svg)](https://fastapi.tiangolo.com)
+[![XGBoost](https://img.shields.io/badge/XGBoost-2.1+-orange.svg)](https://xgboost.readthedocs.io/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-This project demonstrates an end-to-end ML workflow:
-- Data understanding and feature selection
-- Model training and evaluation
-- Backend API using Flask
-- User-friendly frontend interface
-- Deployment-ready setup
-
----
-
-## Problem Statement
-
-Given a user's financial and repayment history, predict whether they are at **high risk** of defaulting on credit payments.
-
----
-
-## Dataset
-
-- Default of Credit Card Clients Dataset (UCI / Kaggle)
-- Includes demographic data, billing amounts, and repayment history
-
----
-
-## Approach
-
-### Feature Selection
-
-The initial model used 20+ features.  
-This was reduced to **5 key features** to balance performance and usability:
-
-- PAY_0 → last month repayment status
-- PAY_2 → repayment status 2 months ago
-- PAY_3 → repayment status 3 months ago
-- AGE → user age
-- PAY_AMT1 → last payment amount
-
-This reduction:
-- simplifies user input
-- improves interpretability
-- enables a clean UI
-
----
-
-### Model
-
-- Algorithm: Logistic Regression  
-- Class imbalance handled using: `class_weight='balanced'`
-
----
-
-### Evaluation
-
-Final model performance:
-
-- F1 Score: ~0.52  
-- Accuracy: ~0.77  
-- Precision (default class): 0.48  
-- Recall (default class): 0.56  
-
-Threshold tuning was performed:
-- 0.5 chosen for best F1 balance  
-- higher thresholds improve precision but reduce recall  
-
----
-
-### Key Insight
-
-Repayment behavior is the strongest predictor:
-
-- PAY_0 has the highest impact  
-- recent delays strongly indicate default risk  
-
----
+An AI-powered loan underwriting system that predicts default risk using XGBoost, explains decisions with SHAP values, and generates natural-language risk reports via LLMs.
 
 ## Features
 
-- Simple and user-friendly web form  
-- Dropdown-based repayment selection  
-- Default values for quick testing  
-- Risk prediction (High / Low)  
-- Probability score output  
-- Explanation of prediction (rule-based reasoning)  
+- **Risk Prediction** — XGBoost classifier trained on 7 features from the UCI Credit Card Default dataset (F1 ~0.53, ROC AUC ~0.76)
+- **Explainable AI** — SHAP `TreeExplainer` shows which features drove each decision, sorted by impact
+- **LLM Risk Reports** — Generates human-readable assessment reports via Groq, Gemini, or OpenRouter (auto fallback)
+- **Production API** — FastAPI with Pydantic v2 validation, async lifespan, OpenAPI docs at `/docs`
+- **Minimal Frontend** — Pico CSS single-page app at `GET /`
+- **Docker Ready** — Multi-platform container with `--env-file` for secrets
+- **Tested** — pytest suite with 7 tests for predictor, SHAP, and risk labels
 
----
+## Quick Start
 
-## Tech Stack
+### Prerequisites
 
-- Python  
-- Flask  
-- Scikit-learn  
-- Pandas  
-- NumPy  
-- HTML + Bootstrap  
+- Python 3.9+
+- LLM API key (Groq recommended — free tier available)
 
----
+### Local Setup
+
+```bash
+# Clone and enter the project
+git clone https://github.com/NameRectified/ai-loan-underwriting-assistant.git
+cd ai-loan-underwriting-assistant
+
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your API keys (see below)
+
+# Run the server
+./run.sh
+```
+
+Open http://127.0.0.1:8000 in your browser.
+
+### Environment Variables
+
+```env
+GROQ_API_KEY=gsk_...          # Primary (recommended)
+GEMINI_API_KEY=AIza...        # Fallback 1
+OPENROUTER_API_KEY=sk-or-...  # Fallback 2
+```
 
 ## Project Structure
 
-    credit-risk-prediction-app/
-    │
-    ├── app.py
-    ├── model.pkl
-    ├── requirements.txt
-    ├── templates/
-    │   └── index.html
+```
+├── app/
+│   ├── main.py              # FastAPI entry point
+│   ├── api/schemas.py       # Pydantic request/response models
+│   ├── config/settings.py   # Environment config via pydantic-settings
+│   ├── services/
+│   │   ├── predictor.py     # XGBoost + SHAP prediction
+│   │   ├── llm_client.py    # Provider-agnostic LLM client
+│   │   ├── report_generator.py  # Builds prompts, calls LLM
+│   │   └── pipeline.py      # Orchestrates predict → report → persist
+│   ├── database/repository.py   # JSON file persistence
+│   └── static/index.html    # Frontend
+├── models/model.pkl         # Trained XGBoost model
+├── prompts/report.yaml      # LLM prompt templates
+├── training/train.py        # Model training script
+├── tests/test_pipeline.py   # pytest suite
+├── Dockerfile               # Container build
+├── .dockerignore
+├── run.sh                   # Cross-platform launcher
+└── requirements.txt
+```
 
----
+## API
 
-## How to Run Locally
+### `POST /api/v1/predict`
 
-### 1. Clone the repository
+```json
+{
+  "limit_bal": 200000,
+  "age": 35,
+  "pay_0": -1,
+  "pay_2": -1,
+  "pay_3": -1,
+  "pay_amt1": 5000,
+  "bill_amt1": 30000
+}
+```
 
-    git clone <your-repo-url>
-    cd credit-risk-prediction-app
+Returns risk category, probability, 7 SHAP explanations, and an LLM-generated report.
 
-### 2. Install dependencies
+Interactive docs at http://127.0.0.1:8000/docs.
 
-    pip install -r requirements.txt
+## Docker
 
-### 3. Run the application
+```bash
+docker build -t loan-underwriter .
+docker run --env-file .env -p 8000:8000 loan-underwriter
+```
 
-    python app.py
+## Tests
 
-### 4. Open in browser
+```bash
+pytest tests/ -v
+```
 
-    http://127.0.0.1:5000
+## Design Decisions
 
----
+See [docs/DESIGN_DECISIONS.md](docs/DESIGN_DECISIONS.md) for feature selection rationale, model evaluation, and architecture choices.
 
-## Example Input
+## License
 
-- Age: 25  
-- Payment status: Paid on time  
-- Payment amount: 2000  
-
----
-
-## Example Output
-
-- Prediction: Low Risk  
-- Probability: 0.32  
-- Explanation:
-  - Consistent on-time payments  
-  - Strong recent payment amount  
-
----
-
-## Future Improvements
-
-- Add model-based explanations (SHAP/LIME)  
-- Improve UI/UX design  
-- Containerize with Docker  
-- Add authentication and logging  
-- Experiment with advanced models (XGBoost, LightGBM)  
-
----
-
-## Author
-
-Balaji Mahendra
+MIT

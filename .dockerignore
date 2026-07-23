@@ -1,0 +1,16 @@
+.env
+venv/
+.progress/
+data/
+__pycache__/
+*.pyc
+.git/
+.gitignore
+README.md
+*.ipynb
+train.py
+app.py
+templates/
+training/
+tests/
+docs/

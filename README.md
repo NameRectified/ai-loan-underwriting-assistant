@@ -17,6 +17,11 @@ An AI-powered loan underwriting system that predicts default risk using XGBoost,
 - **Docker Ready** — Multi-platform container with `--env-file` for secrets
 - **Tested** — pytest suite with 7 tests for predictor, SHAP, and risk labels
 
+## Screenshots
+
+![Loan application form with 7 input fields](assets/form.png)
+![Risk assessment result showing prediction, SHAP explanations, and LLM report](assets/result.png)
+
 ## Why this project?
 
 Traditional credit risk models provide a prediction but often fail to explain *why* a decision was made in a way that loan officers can understand.
@@ -107,6 +112,7 @@ OPENROUTER_API_KEY=sk-or-...  # Fallback 2
 ├── .dockerignore
 ├── run.sh                   # Cross-platform launcher
 └── requirements.txt
+└── assets/                 # Screenshots
 ```
 
 ## API

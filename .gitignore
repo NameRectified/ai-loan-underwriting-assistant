@@ -9,7 +9,8 @@ __pycache__/
 venv/
 
 # AI session memory (never committed)
-.progress/
+.progress/*
+!.progress/INTERVIEW_PREP.md
 
 # IDE
 .idea/

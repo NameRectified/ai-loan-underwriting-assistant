@@ -150,7 +150,7 @@ pytest tests/ -v
 
 ## Design Decisions
 
-See [docs/DESIGN_DECISIONS.md](docs/DESIGN_DECISIONS.md) for feature selection rationale, model evaluation, and architecture choices.
+See [.progress/DESIGN_DECISIONS.md](.progress/DESIGN_DECISIONS.md)
 
 
 ## Tech Stack

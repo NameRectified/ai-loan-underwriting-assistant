@@ -11,6 +11,7 @@ venv/
 # AI session memory (never committed)
 .progress/*
 !.progress/INTERVIEW_PREP.md
+!.progress/DESIGN_DECISIONS.md
 
 # IDE
 .idea/

@@ -63,6 +63,7 @@ def train_model(
         max_depth=6,
         learning_rate=0.1,
         scale_pos_weight=scale_pos_weight,
+        monotone_constraints=(-1, 0, 1, 1, 1, -1, 1),
         random_state=42,
         verbosity=0,
     )

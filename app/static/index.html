@@ -27,7 +27,7 @@
       <div class="grid">
         <label>
           Credit Limit
-          <input type="number" name="limit_bal" value="200000" required>
+          <input type="number" id="limit_bal" name="limit_bal" value="200000" min="0" required>
         </label>
         <label>
           Age
@@ -71,11 +71,11 @@
       <div class="grid">
         <label>
           Last Payment Amount
-          <input type="number" name="pay_amt1" value="5000" min="0" required>
+          <input type="number" id="pay_amt1" name="pay_amt1" value="5000" min="0" required>
         </label>
         <label>
           Last Bill Amount
-          <input type="number" name="bill_amt1" value="30000" min="0" required>
+          <input type="number" id="bill_amt1" name="bill_amt1" value="30000" min="0" required>
         </label>
       </div>
 
@@ -115,6 +115,29 @@
   </main>
 
   <script>
+    const limitInput = document.getElementById("limit_bal");
+    const billInput = document.getElementById("bill_amt1");
+    const payInput = document.getElementById("pay_amt1");
+
+    function updateBillMax() {
+      billInput.max = limitInput.value;
+      if (parseFloat(billInput.value) > parseFloat(limitInput.value)) {
+        billInput.value = limitInput.value;
+      }
+      updatePayMax();
+    }
+
+    function updatePayMax() {
+      payInput.max = billInput.value;
+      if (parseFloat(payInput.value) > parseFloat(billInput.value)) {
+        payInput.value = billInput.value;
+      }
+    }
+
+    limitInput.addEventListener("input", updateBillMax);
+    billInput.addEventListener("input", updatePayMax);
+    updateBillMax();
+
     document.getElementById("appForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const resultDiv = document.getElementById("result");

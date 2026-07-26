@@ -1,5 +1,6 @@
 """Tests for the underwriting pipeline."""
 
+import pytest
 from app.api.schemas import LoanApplication
 from app.services.predictor import Predictor
 
@@ -124,3 +125,21 @@ def test_risk_assessment_has_all_fields():
     assert 0.0 <= result.default_probability <= 1.0
     assert len(result.features_used) == 7
     assert result.risk_report == ""  # LLM not available in tests
+
+
+def test_pay_exceeds_bill_rejected():
+    """Pay amount exceeding bill amount should raise validation error."""
+    with pytest.raises(ValueError, match="pay_amt1.*exceeds bill amount"):
+        LoanApplication(
+            limit_bal=100000, age=30, pay_0=-1, pay_2=-1, pay_3=-1,
+            pay_amt1=50000, bill_amt1=30000,
+        )
+
+
+def test_bill_exceeds_limit_rejected():
+    """Bill amount exceeding credit limit should raise validation error."""
+    with pytest.raises(ValueError, match="bill_amt1.*exceeds credit limit"):
+        LoanApplication(
+            limit_bal=10000, age=30, pay_0=-1, pay_2=-1, pay_3=-1,
+            pay_amt1=500, bill_amt1=50000,
+        )

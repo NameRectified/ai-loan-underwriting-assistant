@@ -1,6 +1,6 @@
 """Pydantic schemas for API request/response validation."""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class LoanApplication(BaseModel):
@@ -58,6 +58,17 @@ class LoanApplication(BaseModel):
         description="Bill statement amount last month",
         example=30000,
     )
+
+    @model_validator(mode="after")
+    def check_credit_limits(self):
+        errs = []
+        if self.bill_amt1 > self.limit_bal:
+            errs.append(f"bill_amt1 ({self.bill_amt1}) exceeds credit limit ({self.limit_bal})")
+        if self.pay_amt1 > self.bill_amt1:
+            errs.append(f"pay_amt1 ({self.pay_amt1}) exceeds bill amount ({self.bill_amt1})")
+        if errs:
+            raise ValueError("; ".join(errs))
+        return self
 
 
 class FeatureContribution(BaseModel):

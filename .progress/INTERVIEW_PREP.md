@@ -38,6 +38,22 @@ FastAPI has native async support, automatic OpenAPI docs, and Pydantic v2 integr
 
 From 23 original features in the UCI dataset, I used XGBoost feature importance and domain knowledge. PAY_0 dominated (58% importance), followed by PAY_2 (24%) and PAY_3 (9%). The billing/payment amounts contributed less but were kept for the SHAP explanations to give loan officers actionable detail.
 
+**Q: Why does every assessment get persisted to a JSON file?**
+
+Every prediction is saved as an audit trail — UUID + timestamp + full assessment. Lending decisions must be traceable and explainable after the fact (regulatory/compliance requirement in real underwriting systems). I'd frame this as an **audit log**, not durable storage — in production I'd swap the JSON file for Postgres/SQLite.
+
+## Performance Numbers
+
+**Q: What are the concrete numbers?**
+
+- Dataset: 30,000 samples, 23 original features → 7 selected
+- Split: 21,000 train / 4,500 validation / 4,500 test
+- ROC AUC 0.77 (was 0.72 with LogisticRegression), F1 0.53, accuracy 80%
+- Decision threshold 0.60, tuned over 0.30–0.70 for best F1
+- 9 pytest tests, all passing, ~3s run time
+- Inference: prediction + SHAP in milliseconds; + LLM report via Groq ~2s
+- 5 LLM provider entries in fallback order: Groq → Gemini → OpenRouter (3 models)
+
 ## Model Limitations
 
 **Q: What are the model's weaknesses?**

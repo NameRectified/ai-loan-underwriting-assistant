@@ -1,0 +1,13 @@
+name: Keep Render Alive
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping app health endpoint
+        run: curl -fsS --max-time 60 https://ai-loan-underwriting-assistant.onrender.com/health

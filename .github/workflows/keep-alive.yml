@@ -10,4 +10,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping app health endpoint
-        run: curl -fsS --max-time 60 https://ai-loan-underwriting-assistant.onrender.com/health
+        run: curl -fsS --max-time 180 https://ai-loan-underwriting-assistant.onrender.com/health

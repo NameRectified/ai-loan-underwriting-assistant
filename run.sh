@@ -3,6 +3,7 @@ set -euo pipefail
 
 VENV_DIR="venv"
 APP_MODULE="app.main:app"
+PORT="${PORT:-8000}"
 
 if [ ! -d "$VENV_DIR" ]; then
     echo "ERROR: Virtual environment not found at $VENV_DIR"
@@ -14,7 +15,7 @@ PYTHON="$VENV_DIR/bin/python3"
 
 # Apple Silicon requires x86_64 for certain native extensions (e.g. XGBoost)
 if [ "$(uname -s)" = "Darwin" ] && [ "$(uname -m)" = "arm64" ]; then
-    exec arch -x86_64 "$PYTHON" -m uvicorn "$APP_MODULE" --reload "$@"
+    exec arch -x86_64 "$PYTHON" -m uvicorn "$APP_MODULE" --reload --port "$PORT" "$@"
 else
-    exec "$PYTHON" -m uvicorn "$APP_MODULE" --reload "$@"
+    exec "$PYTHON" -m uvicorn "$APP_MODULE" --reload --port "$PORT" "$@"
 fi

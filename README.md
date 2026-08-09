@@ -82,6 +82,13 @@ cp .env.example .env
 
 Open http://127.0.0.1:8000 in your browser.
 
+To use a different port (e.g. when 8000 is already in use):
+
+```bash
+PORT=8001 ./run.sh
+# then open http://127.0.0.1:8001
+```
+
 ### Environment Variables
 
 ```env

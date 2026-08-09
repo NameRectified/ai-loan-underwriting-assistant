@@ -24,60 +24,69 @@
 
     <form id="appForm">
       <section class="card">
-        <div class="form-grid two">
-          <div class="field-group">
-            <label class="field-label" for="limit_bal">Credit Limit</label>
-            <input type="number" id="limit_bal" name="limit_bal" value="200000" min="0" required>
+        <fieldset>
+          <legend>Credit Profile</legend>
+          <div class="form-grid two">
+            <div class="field-group">
+              <label class="field-label" for="limit_bal">Credit Limit</label>
+              <input type="number" id="limit_bal" name="limit_bal" value="200000" min="0" required>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="age">Age</label>
+              <input type="number" id="age" name="age" value="35" min="18" max="120" required>
+            </div>
           </div>
-          <div class="field-group">
-            <label class="field-label" for="age">Age</label>
-            <input type="number" id="age" name="age" value="35" min="18" max="120" required>
-          </div>
-        </div>
+        </fieldset>
 
-        <div class="form-grid">
-          <div class="field-group">
-            <label class="field-label" for="pay_0">PAY_0 (last month)</label>
-            <select id="pay_0" name="pay_0">
-              <option value="-1">Paid in full</option>
-              <option value="0">Revolving (min payment)</option>
-              <option value="1">1 mo delay</option>
-              <option value="2">2 mo delay</option>
-              <option value="3">3+ mo delay</option>
-            </select>
+        <fieldset>
+          <legend>Payment History</legend>
+          <div class="form-grid">
+            <div class="field-group">
+              <label class="field-label" for="pay_0">Last Month</label>
+              <select id="pay_0" name="pay_0">
+                <option value="-1">Paid in full</option>
+                <option value="0">Revolving (min payment)</option>
+                <option value="1">1 mo delay</option>
+                <option value="2">2 mo delay</option>
+                <option value="3">3+ mo delay</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="pay_2">Two Months Ago</label>
+              <select id="pay_2" name="pay_2">
+                <option value="-1">Paid in full</option>
+                <option value="0">Revolving (min payment)</option>
+                <option value="1">1 mo delay</option>
+                <option value="2">2 mo delay</option>
+                <option value="3">3+ mo delay</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="pay_3">Three Months Ago</label>
+              <select id="pay_3" name="pay_3">
+                <option value="-1">Paid in full</option>
+                <option value="0">Revolving (min payment)</option>
+                <option value="1">1 mo delay</option>
+                <option value="2">2 mo delay</option>
+                <option value="3">3+ mo delay</option>
+              </select>
+            </div>
           </div>
-          <div class="field-group">
-            <label class="field-label" for="pay_2">PAY_2 (2 months ago)</label>
-            <select id="pay_2" name="pay_2">
-              <option value="-1">Paid in full</option>
-              <option value="0">Revolving (min payment)</option>
-              <option value="1">1 mo delay</option>
-              <option value="2">2 mo delay</option>
-              <option value="3">3+ mo delay</option>
-            </select>
-          </div>
-          <div class="field-group">
-            <label class="field-label" for="pay_3">PAY_3 (3 months ago)</label>
-            <select id="pay_3" name="pay_3">
-              <option value="-1">Paid in full</option>
-              <option value="0">Revolving (min payment)</option>
-              <option value="1">1 mo delay</option>
-              <option value="2">2 mo delay</option>
-              <option value="3">3+ mo delay</option>
-            </select>
-          </div>
-        </div>
+        </fieldset>
 
-        <div class="form-grid two">
-          <div class="field-group">
-            <label class="field-label" for="pay_amt1">Last Payment Amount</label>
-            <input type="number" id="pay_amt1" name="pay_amt1" value="5000" min="0" required>
+        <fieldset>
+          <legend>Recent Account Activity</legend>
+          <div class="form-grid two">
+            <div class="field-group">
+              <label class="field-label" for="pay_amt1">Last Payment Amount</label>
+              <input type="number" id="pay_amt1" name="pay_amt1" value="5000" min="0" required>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="bill_amt1">Last Bill Amount</label>
+              <input type="number" id="bill_amt1" name="bill_amt1" value="30000" min="0" required>
+            </div>
           </div>
-          <div class="field-group">
-            <label class="field-label" for="bill_amt1">Last Bill Amount</label>
-            <input type="number" id="bill_amt1" name="bill_amt1" value="30000" min="0" required>
-          </div>
-        </div>
+        </fieldset>
       </section>
 
       <button type="submit" class="btn btn-primary btn-block">Assess Risk</button>
@@ -103,10 +112,12 @@
             Each factor pushes default risk up or down from the
             <strong><span id="baselineProb"></span> average default rate</strong>.
             The strongest factors are listed first.
+            <span class="positive">Green (negative SHAP) = decreases risk</span>,
+            <span class="negative">red (positive SHAP) = increases risk</span>.
           </p>
           <table>
             <thead>
-              <tr><th>Factor</th><th>Applicant Value</th><th>Effect on Risk</th></tr>
+              <tr><th>Factor</th><th>Applicant Value</th><th>SHAP Value</th><th>Effect on Risk</th></tr>
             </thead>
             <tbody id="shapTable"></tbody>
           </table>
@@ -202,14 +213,25 @@
 
         const shapBody = document.getElementById("shapTable");
         shapBody.innerHTML = "";
+        const maxAbs = Math.max(...data.shap_explanations.map(e => Math.abs(e.shap_value)), 0.0001);
         for (const e of data.shap_explanations) {
           const row = document.createElement("tr");
-          const effectClass = e.shap_value >= 0 ? "positive" : "negative";
-          const tooltip = `SHAP value ${e.shap_value >= 0 ? "+" : ""}${e.shap_value.toFixed(4)} (log-odds units)`;
+          const effectClass = e.shap_value >= 0 ? "negative" : "positive";
+          const absShap = Math.abs(e.shap_value);
+          const barPct = Math.max((absShap / maxAbs) * 100, 4);
+          const barSide = e.shap_value >= 0 ? "right" : "left";
+          const shapCell = `
+            <td class="${effectClass}">
+              <span class="shap-tooltip" tabindex="0" data-tip="Log-odds units: how much this factor pushed the prediction">${e.shap_value >= 0 ? "+" : ""}${e.shap_value.toFixed(4)}</span>
+              <div class="shap-bar-track" aria-hidden="true">
+                <span class="shap-bar-fill ${barSide} ${effectClass}" style="width:${barPct}%"></span>
+              </div>
+            </td>`;
           row.innerHTML = `
             <td>${e.feature_label}</td>
             <td>${e.value_label}</td>
-            <td class="${effectClass}"><span class="shap-tooltip" tabindex="0" data-tip="${tooltip}">${e.magnitude}</span></td>
+            ${shapCell}
+            <td class="${effectClass}">${e.magnitude}</td>
           `;
           shapBody.appendChild(row);
         }

@@ -7,83 +7,7 @@ from loguru import logger
 from xgboost import XGBClassifier
 
 from app.api.schemas import FeatureContribution, LoanApplication, RiskAssessment
-
-
-def _format_currency(value: float) -> str:
-    """Format a monetary value with thousands separators."""
-    return f"{value:,.0f}"
-
-
-def _format_pay_status(value: float) -> str:
-    """Translate a repayment-status code into plain language.
-
-    The PAY_* features encode -2 (no usage) through 8+ (months late).
-    """
-    mapping = {
-        -2: "No usage that month",
-        -1: "Paid in full",
-        0: "Minimum payment",
-        1: "1 month late",
-        2: "2 months late",
-        3: "3 months late",
-    }
-    v = int(round(value))
-    if v in mapping:
-        return mapping[v]
-    if v > 3:
-        return f"{v} months late"
-    return str(value)
-
-
-def _describe_magnitude(shap_value: float) -> str:
-    """Convert a SHAP value into a plain-language strength description.
-
-    SHAP values are in log-odds units, so we bucket by absolute value
-    and combine with direction.
-    """
-    abs_v = abs(shap_value)
-    if abs_v >= 0.30:
-        strength = "Very strongly"
-    elif abs_v >= 0.15:
-        strength = "Strongly"
-    elif abs_v >= 0.05:
-        strength = "Moderately"
-    else:
-        strength = "Slightly"
-    direction = "increases risk" if shap_value >= 0 else "decreases risk"
-    return f"{strength} {direction}"
-
-
-FEATURE_META = {
-    "LIMIT_BAL": {
-        "label": "Credit Limit",
-        "formatter": _format_currency,
-    },
-    "AGE": {
-        "label": "Age",
-        "formatter": lambda v: f"{int(v)} years",
-    },
-    "PAY_0": {
-        "label": "Repayment Status (Last Month)",
-        "formatter": _format_pay_status,
-    },
-    "PAY_2": {
-        "label": "Repayment Status (2 Months Ago)",
-        "formatter": _format_pay_status,
-    },
-    "PAY_3": {
-        "label": "Repayment Status (3 Months Ago)",
-        "formatter": _format_pay_status,
-    },
-    "PAY_AMT1": {
-        "label": "Last Payment Amount",
-        "formatter": _format_currency,
-    },
-    "BILL_AMT1": {
-        "label": "Last Bill Amount",
-        "formatter": _format_currency,
-    },
-}
+from app.services.feature_meta import FEATURE_META, describe_magnitude
 
 
 class Predictor:
@@ -169,7 +93,7 @@ class Predictor:
                 value_label=FEATURE_META[feat]["formatter"](row[feat]),
                 shap_value=round(float(shap_row[i]), 4),
                 impact="increases_risk" if shap_row[i] >= 0 else "decreases_risk",
-                magnitude=_describe_magnitude(float(shap_row[i])),
+                magnitude=describe_magnitude(float(shap_row[i])),
             )
             for i, feat in enumerate(self._features)
         ]

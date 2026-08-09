@@ -1,8 +1,9 @@
 """Tests for the underwriting pipeline."""
 
 import pytest
-from app.api.schemas import LoanApplication
+from app.api.schemas import FeatureContribution, LoanApplication, RiskAssessment
 from app.services.predictor import Predictor
+from app.services.report_generator import _format_applicant_data, _format_shap
 
 MODEL_PATH = "models/model.pkl"
 
@@ -176,3 +177,64 @@ def test_bill_exceeds_limit_rejected():
             limit_bal=10000, age=30, pay_0=-1, pay_2=-1, pay_3=-1,
             pay_amt1=500, bill_amt1=50000,
         )
+
+
+_RAW_FEATURE_CODES = [
+    "PAY_0",
+    "PAY_2",
+    "PAY_3",
+    "LIMIT_BAL",
+    "PAY_AMT1",
+    "BILL_AMT1",
+]
+
+
+def test_applicant_data_is_human_readable():
+    """Applicant data fed to the LLM must use labels, never raw codes."""
+    app = LoanApplication(
+        limit_bal=200000,
+        age=35,
+        pay_0=-1,
+        pay_2=-1,
+        pay_3=0,
+        pay_amt1=5000,
+        bill_amt1=30000,
+    )
+    text = _format_applicant_data(app)
+
+    assert "Repayment Status (Last Month): Paid in full" in text
+    assert "Credit Limit: 200,000" in text
+    assert "Age: 35 years" in text
+    for code in _RAW_FEATURE_CODES:
+        assert code not in text
+
+
+def test_shap_prompt_is_human_readable():
+    """SHAP text fed to the LLM must use labels, never raw codes."""
+    explanations = [
+        FeatureContribution(
+            feature_name="PAY_0",
+            feature_label="Repayment Status (Last Month)",
+            feature_value=-1,
+            value_label="Paid in full",
+            shap_value=-0.4123,
+            impact="decreases_risk",
+            magnitude="Very strongly decreases risk",
+        ),
+        FeatureContribution(
+            feature_name="LIMIT_BAL",
+            feature_label="Credit Limit",
+            feature_value=200000,
+            value_label="200,000",
+            shap_value=0.15,
+            impact="increases_risk",
+            magnitude="Moderately increases risk",
+        ),
+    ]
+    text = _format_shap(explanations)
+
+    assert "Repayment Status (Last Month) (Paid in full)" in text
+    assert "SHAP -0.4123 (Very strongly decreases risk)" in text
+    assert "Credit Limit (200,000)" in text
+    for code in _RAW_FEATURE_CODES:
+        assert code not in text

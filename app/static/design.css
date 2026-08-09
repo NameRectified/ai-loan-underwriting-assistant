@@ -147,6 +147,32 @@ a svg.arrow-icon {
   margin-bottom: 0;
 }
 
+fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+fieldset:last-child {
+  margin-bottom: 0;
+}
+
+fieldset legend {
+  font-family: var(--font-body);
+  font-size: var(--font-size-label);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-heading);
+  padding: 0;
+  margin: 0 0 4px;
+}
+
+fieldset + fieldset {
+  border-top: 1px solid rgba(31, 41, 55, 0.2);
+  padding-top: 16px;
+}
+
 .field-label {
   display: block;
   font-size: var(--font-size-label);
@@ -331,6 +357,33 @@ td {
 .shap-tooltip:hover::after,
 .shap-tooltip:focus::after {
   opacity: 1;
+}
+
+.shap-bar-track {
+  position: relative;
+  height: 6px;
+  margin-top: 6px;
+  width: 100%;
+  background: rgba(31, 41, 55, 0.12);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.shap-bar-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 3px;
+}
+
+.shap-bar-fill.left {
+  right: 50%;
+  background: var(--color-positive);
+}
+
+.shap-bar-fill.right {
+  left: 50%;
+  background: var(--color-negative);
 }
 
 #report h1, #report h2, #report h3 { margin-top: 24px; }

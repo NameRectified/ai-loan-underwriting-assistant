@@ -10,6 +10,8 @@ report_generation:
     - Use professional financial language but keep it readable.
     - Highlight the top 3 risk factors (both positive and negative).
     - End with a recommendation for the loan officer to review.
+    - Use only the plain-language factor names and values provided below.
+      Never output internal codes such as PAY_0, PAY_2, LIMIT_BAL, or BILL_AMT1.
 
   user_prompt_template: |
     LOAN APPLICATION RISK ASSESSMENT

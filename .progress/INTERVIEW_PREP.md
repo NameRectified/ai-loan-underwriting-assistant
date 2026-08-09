@@ -12,6 +12,8 @@ Every ML output exposed to users must be self-explanatory. Raw artifacts — fea
 
 I implement this at the API layer (backend returns `feature_label`, `value_label`, `magnitude`), not just the frontend, so *any* consumer — a loan officer dashboard, a mobile app, an API integration — gets the same clarity. This matters because outputs are consumed by non-technical stakeholders (loan officers, regulators) and decisions must be auditable and explainable.
 
+The LLM reports follow the same rule: the prompt is built from the human-readable labels (`feature_label`, `value_label`, `magnitude`), and the system prompt forbids internal codes like `PAY_0`. So even the free-form narrative never leaks raw feature codes to the reader.
+
 ## Monotonic Constraints
 
 **Q: Why did you add monotonic constraints?**
@@ -62,7 +64,7 @@ Every prediction is saved as an audit trail — UUID + timestamp + full assessme
 - Split: 21,000 train / 4,500 validation / 4,500 test
 - ROC AUC 0.77 (was 0.72 with LogisticRegression), F1 0.53, accuracy 80%
 - Decision threshold 0.60, tuned over 0.30–0.70 for best F1
-- 9 pytest tests, all passing, ~3s run time
+- 12 pytest tests, all passing, ~3s run time
 - Inference: prediction + SHAP in milliseconds; + LLM report via Groq ~2s
 - 5 LLM provider entries in fallback order: Groq → Gemini → OpenRouter (3 models)
 

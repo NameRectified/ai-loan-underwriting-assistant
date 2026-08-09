@@ -297,6 +297,42 @@ td {
   border-bottom: 1px solid rgba(31, 41, 55, 0.2);
 }
 
+.shap-explainer {
+  font-size: var(--font-size-label);
+  color: var(--color-heading);
+  opacity: 0.8;
+  max-width: 60ch;
+}
+
+.shap-tooltip {
+  position: relative;
+  cursor: help;
+  border-bottom: 1px dotted currentColor;
+}
+
+.shap-tooltip::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: 130%;
+  left: 0;
+  z-index: 10;
+  white-space: nowrap;
+  background: var(--color-heading);
+  color: var(--color-bg);
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 6px 10px;
+  border-radius: 6px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.shap-tooltip:hover::after,
+.shap-tooltip:focus::after {
+  opacity: 1;
+}
+
 #report h1, #report h2, #report h3 { margin-top: 24px; }
 #report p { margin-bottom: var(--paragraph-gap); }
 #report ul, #report ol { margin-bottom: var(--paragraph-gap); }

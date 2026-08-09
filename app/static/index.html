@@ -99,9 +99,14 @@
 
         <details>
           <summary>Feature Contributions (SHAP)</summary>
+          <p class="shap-explainer">
+            Each factor pushes default risk up or down from the
+            <strong><span id="baselineProb"></span> average default rate</strong>.
+            The strongest factors are listed first.
+          </p>
           <table>
             <thead>
-              <tr><th>Feature</th><th>Value</th><th>SHAP</th><th>Impact</th></tr>
+              <tr><th>Factor</th><th>Applicant Value</th><th>Effect on Risk</th></tr>
             </thead>
             <tbody id="shapTable"></tbody>
           </table>
@@ -192,15 +197,19 @@
         document.getElementById("probability").textContent =
           (data.default_probability * 100).toFixed(1) + "%";
 
+        document.getElementById("baselineProb").textContent =
+          (data.baseline_probability * 100).toFixed(1) + "%";
+
         const shapBody = document.getElementById("shapTable");
         shapBody.innerHTML = "";
         for (const e of data.shap_explanations) {
           const row = document.createElement("tr");
+          const effectClass = e.shap_value >= 0 ? "positive" : "negative";
+          const tooltip = `SHAP value ${e.shap_value >= 0 ? "+" : ""}${e.shap_value.toFixed(4)} (log-odds units)`;
           row.innerHTML = `
-            <td>${e.feature_name}</td>
-            <td>${e.feature_value}</td>
-            <td class="${e.shap_value >= 0 ? "positive" : "negative"}">${e.shap_value >= 0 ? "+" : ""}${e.shap_value.toFixed(4)}</td>
-            <td>${e.impact.replace("_", " ")}</td>
+            <td>${e.feature_label}</td>
+            <td>${e.value_label}</td>
+            <td class="${effectClass}"><span class="shap-tooltip" tabindex="0" data-tip="${tooltip}">${e.magnitude}</span></td>
           `;
           shapBody.appendChild(row);
         }

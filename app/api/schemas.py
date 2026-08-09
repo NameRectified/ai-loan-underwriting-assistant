@@ -76,18 +76,25 @@ class FeatureContribution(BaseModel):
 
     Shows how much a specific feature value pushed the prediction
     above or below the baseline (average default probability).
+    Includes human-readable labels so the output is self-explanatory.
     """
 
     feature_name: str = Field(
         ..., description="Feature name (e.g. PAY_0, LIMIT_BAL)", example="PAY_0"
     )
+    feature_label: str = Field(
+        ..., description="Human-readable feature name", example="Repayment Status (Last Month)"
+    )
     feature_value: float = Field(
         ..., description="The actual value the applicant provided", example=-1
+    )
+    value_label: str = Field(
+        ..., description="Human-readable interpretation of the value", example="Paid in full"
     )
     shap_value: float = Field(
         ...,
         description=(
-            "How much this feature pushed the prediction. "
+            "How much this feature pushed the prediction (log-odds units). "
             "Positive = increased default risk, Negative = decreased risk."
         ),
         example=0.15,
@@ -96,6 +103,11 @@ class FeatureContribution(BaseModel):
         ...,
         description="Direction of impact: increases_risk or decreases_risk",
         example="decreases_risk",
+    )
+    magnitude: str = Field(
+        ...,
+        description="Plain-language strength and direction",
+        example="Strongly decreases risk",
     )
 
 
@@ -111,6 +123,16 @@ class RiskAssessment(BaseModel):
         le=1.0,
         description="Predicted probability of default (0-1)",
         example=0.32,
+    )
+    baseline_probability: float = Field(
+        ...,
+        ge=0.0,
+        le=1.0,
+        description=(
+            "Average default rate in the training population that SHAP "
+            "explanations are measured against"
+        ),
+        example=0.22,
     )
     features_used: list[str] = Field(
         ..., description="Feature names used by the model"

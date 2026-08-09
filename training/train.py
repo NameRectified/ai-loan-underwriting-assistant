@@ -140,15 +140,17 @@ def main() -> None:
         logger.info(f"  {k}: {v:.4f}")
 
     os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
+    baseline_default_rate = float(y_train.mean())
     joblib.dump(
         {
             "model": model,
             "features": SELECTED_FEATURES,
             "threshold": threshold,
+            "baseline_default_rate": baseline_default_rate,
         },
         MODEL_PATH,
     )
-    logger.success(f"Model saved to {MODEL_PATH}")
+    logger.success(f"Model saved to {MODEL_PATH} with baseline default rate {baseline_default_rate:.4f}")
 
 
 if __name__ == "__main__":

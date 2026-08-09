@@ -123,8 +123,41 @@ def test_risk_assessment_has_all_fields():
     result = predictor.predict(app)
     assert result.risk in ("Low", "High")
     assert 0.0 <= result.default_probability <= 1.0
+    assert 0.0 <= result.baseline_probability <= 1.0
     assert len(result.features_used) == 7
     assert result.risk_report == ""  # LLM not available in tests
+
+
+def test_shap_explanations_are_human_readable():
+    """SHAP explanations should include human-readable labels."""
+    predictor = Predictor(MODEL_PATH)
+    app = LoanApplication(
+        limit_bal=100000,
+        age=40,
+        pay_0=-1,
+        pay_2=-1,
+        pay_3=-1,
+        pay_amt1=3000,
+        bill_amt1=20000,
+    )
+    result = predictor.predict(app)
+    by_name = {e.feature_name: e for e in result.shap_explanations}
+
+    pay_0 = by_name["PAY_0"]
+    assert pay_0.feature_label == "Repayment Status (Last Month)"
+    assert pay_0.value_label == "Paid in full"
+
+    limit = by_name["LIMIT_BAL"]
+    assert limit.feature_label == "Credit Limit"
+    assert limit.value_label == "100,000"
+
+    age = by_name["AGE"]
+    assert age.value_label == "40 years"
+
+    for e in result.shap_explanations:
+        assert e.feature_label
+        assert e.value_label
+        assert "risk" in e.magnitude
 
 
 def test_pay_exceeds_bill_rejected():

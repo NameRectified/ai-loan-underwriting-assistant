@@ -1,5 +1,17 @@
 # Interview Prep — AI Loan Underwriting Assistant
 
+## Product Principle: Human-Readable Outputs
+
+**Q: How do you present ML output to non-technical stakeholders?**
+
+Every ML output exposed to users must be self-explanatory. Raw artifacts — feature codes (`PAY_0`), log-odds SHAP values, `-1`/`0`/`1` enums — are *internal representations*. The API and UI translate them into domain language:
+
+- `PAY_0` → "Repayment Status (Last Month)"
+- `-1` → "Paid in full"
+- SHAP `-0.4988` → "Very strongly decreases risk" (raw value in a tooltip)
+
+I implement this at the API layer (backend returns `feature_label`, `value_label`, `magnitude`), not just the frontend, so *any* consumer — a loan officer dashboard, a mobile app, an API integration — gets the same clarity. This matters because outputs are consumed by non-technical stakeholders (loan officers, regulators) and decisions must be auditable and explainable.
+
 ## Monotonic Constraints
 
 **Q: Why did you add monotonic constraints?**

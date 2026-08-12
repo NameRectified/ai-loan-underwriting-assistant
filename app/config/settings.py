@@ -20,7 +20,7 @@ class Settings(BaseSettings):
 
     # --- Gemini ---
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-1.5-flash"
+    gemini_model: str = "gemini-2.5-flash"
 
     # --- OpenRouter ---
     openrouter_api_key: str = ""
@@ -28,9 +28,9 @@ class Settings(BaseSettings):
     # underlying providers. If one model is rate-limited, the next may work.
     # Comma-separated, tried in order.
     openrouter_models: str = (
-        "google/gemini-2.0-flash-001,"
-        "meta-llama/llama-3-70b-instruct,"
-        "mistralai/mistral-7b-instruct"
+        "google/gemini-2.5-flash,"
+        "meta-llama/llama-3.3-70b-instruct,"
+        "mistralai/mistral-small-3.2-24b-instruct"
     )
 
     # Paths

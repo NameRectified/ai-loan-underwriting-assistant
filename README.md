@@ -181,6 +181,10 @@ This project uses the UCI Credit Card Default dataset.
 - 7 engineered input features
 
 
+## AI Assistance Disclosure
+
+This project was built with the assistance of AI coding tools. All architectural and design decisions, code review, and validation were done by me; AI was used to help write and refine the implementation.
+
 ## License
 
 MIT

@@ -1,8 +1,6 @@
-"""Human-readable metadata and value formatters for model features.
+"""Human-readable labels for model features (e.g. PAY_0 -> "Repayment Status").
 
-Internal representations (feature codes like ``PAY_0``, repayment-status
-enums, raw SHAP values) are translated into domain language here so that
-both the API responses and the LLM prompts stay self-explanatory.
+Keeps API responses and LLM prompts self-explanatory.
 """
 
 

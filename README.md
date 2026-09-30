@@ -35,21 +35,15 @@ flowchart TD
 
     A[User] --> B[FastAPI API]
 
-    B --> C[Underwriting Pipeline]
+    B --> C[XGBoost Prediction + SHAP Explanations]
 
-    C --> D[XGBoost Prediction + SHAP Explanations]
+    C --> D[Provider-Agnostic LLM Client]
 
-    D --> E[Provider-Agnostic LLM Client]
+    D --> E[Groq / Gemini / OpenRouter]
 
-    E --> F[Groq / Gemini / OpenRouter]
-
-    F --> G[Persist Assessment]
-
-    G --> H[JSON Repository]
-
-    H --> I[API Response]
+    E --> F[API Response]
 ```
-The underwriting pipeline separates prediction, explanation, report generation, and persistence into independent components, making it easy to replace models or LLM providers without modifying the orchestration logic.
+Predict → explain → report: three independent steps kept separate so models or LLM providers can be swapped without touching the API layer.
 
 ## Quick Start
 
@@ -100,26 +94,23 @@ OPENROUTER_API_KEY=sk-or-...  # Fallback 2
 ## Project Structure
 
 ```
+```
 ├── app/
-│   ├── main.py              # FastAPI entry point
+│   ├── main.py              # FastAPI entry point (predict → report)
 │   ├── api/schemas.py       # Pydantic request/response models
 │   ├── config/settings.py   # Environment config via pydantic-settings
 │   ├── services/
 │   │   ├── predictor.py     # XGBoost + SHAP prediction
-│   │   ├── llm_client.py    # Provider-agnostic LLM client
-│   │   ├── report_generator.py  # Builds prompts, calls LLM
-│   │   └── pipeline.py      # Orchestrates predict → report → persist
-│   ├── database/repository.py   # JSON file persistence
+│   │   ├── labels.py        # Human-readable feature labels + formatters
+│   │   ├── llm_client.py    # Groq / Gemini / OpenRouter with fallback
+│   │   └── report_generator.py  # Prompts + LLM report generation
 │   └── static/index.html    # Frontend
 ├── models/model.pkl         # Trained XGBoost model
-├── prompts/report.yaml      # LLM prompt templates
 ├── training/train.py        # Model training script
 ├── tests/test_pipeline.py   # pytest suite
 ├── Dockerfile               # Container build
-├── .dockerignore
-├── run.sh                   # Cross-platform launcher
+├── run.sh                   # Local launcher
 └── requirements.txt
-└── assets/                 # Screenshots
 ```
 
 ## API

@@ -1,4 +1,4 @@
-"""Tests for the underwriting pipeline."""
+"""Tests for predict -> explain (SHAP labels verified, LLM report mocked out)."""
 
 import pytest
 from app.api.schemas import FeatureContribution, LoanApplication, RiskAssessment
@@ -8,9 +8,13 @@ from app.services.report_generator import _format_applicant_data, _format_shap
 MODEL_PATH = "models/model.pkl"
 
 
-def test_predictor_loads():
+@pytest.fixture(scope="module")
+def predictor():
+    return Predictor(MODEL_PATH)
+
+
+def test_predictor_loads(predictor):
     """Predictor should load without errors."""
-    predictor = Predictor(MODEL_PATH)
     assert predictor.features == [
         "LIMIT_BAL",
         "AGE",
@@ -22,9 +26,8 @@ def test_predictor_loads():
     ]
 
 
-def test_low_risk_prediction():
+def test_low_risk_prediction(predictor):
     """On-time payer with high credit limit should be low risk."""
-    predictor = Predictor(MODEL_PATH)
     app = LoanApplication(
         limit_bal=200000,
         age=35,
@@ -39,9 +42,8 @@ def test_low_risk_prediction():
     assert result.default_probability < 0.5
 
 
-def test_high_risk_prediction():
+def test_high_risk_prediction(predictor):
     """Delayed payer with low credit should be high risk."""
-    predictor = Predictor(MODEL_PATH)
     app = LoanApplication(
         limit_bal=50000,
         age=25,
@@ -56,9 +58,8 @@ def test_high_risk_prediction():
     assert result.default_probability > 0.5
 
 
-def test_shap_explanations_are_present():
+def test_shap_explanations_are_present(predictor):
     """RiskAssessment should include SHAP explanations for all features."""
-    predictor = Predictor(MODEL_PATH)
     app = LoanApplication(
         limit_bal=100000,
         age=40,
@@ -72,9 +73,8 @@ def test_shap_explanations_are_present():
     assert len(result.shap_explanations) == 7
 
 
-def test_shap_explanations_sorted_by_importance():
+def test_shap_explanations_sorted_by_importance(predictor):
     """SHAP explanations should be sorted by absolute value descending."""
-    predictor = Predictor(MODEL_PATH)
     app = LoanApplication(
         limit_bal=100000,
         age=40,
@@ -89,9 +89,8 @@ def test_shap_explanations_sorted_by_importance():
     assert values == sorted(values, reverse=True)
 
 
-def test_shap_impact_direction():
+def test_shap_impact_direction(predictor):
     """SHAP impact should correctly reflect positive/negative values."""
-    predictor = Predictor(MODEL_PATH)
     app = LoanApplication(
         limit_bal=100000,
         age=40,
@@ -109,9 +108,8 @@ def test_shap_impact_direction():
             assert e.impact == "decreases_risk"
 
 
-def test_risk_assessment_has_all_fields():
+def test_risk_assessment_has_all_fields(predictor):
     """RiskAssessment response should include all required fields."""
-    predictor = Predictor(MODEL_PATH)
     app = LoanApplication(
         limit_bal=100000,
         age=30,
@@ -129,9 +127,8 @@ def test_risk_assessment_has_all_fields():
     assert result.risk_report == ""  # LLM not available in tests
 
 
-def test_shap_explanations_are_human_readable():
+def test_shap_explanations_are_human_readable(predictor):
     """SHAP explanations should include human-readable labels."""
-    predictor = Predictor(MODEL_PATH)
     app = LoanApplication(
         limit_bal=100000,
         age=40,

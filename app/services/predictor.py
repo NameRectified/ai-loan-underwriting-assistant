@@ -7,7 +7,7 @@ from loguru import logger
 from xgboost import XGBClassifier
 
 from app.api.schemas import FeatureContribution, LoanApplication, RiskAssessment
-from app.services.feature_meta import FEATURE_META, describe_magnitude
+from app.services.labels import FEATURE_META, describe_magnitude
 
 
 class Predictor:

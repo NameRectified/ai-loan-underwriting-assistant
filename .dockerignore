@@ -10,7 +10,6 @@ README.md
 *.ipynb
 train.py
 app.py
-templates/
 training/
 tests/
 docs/

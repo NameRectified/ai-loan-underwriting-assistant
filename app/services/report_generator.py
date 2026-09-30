@@ -1,28 +1,46 @@
 """Generates narrative risk reports using an LLM."""
 
 from loguru import logger
-import yaml
 
 from app.api.schemas import FeatureContribution, LoanApplication, RiskAssessment
-from app.services.feature_meta import FEATURE_META, humanize_value
+from app.services.labels import FEATURE_META, humanize_value
 from app.services.llm_client import LLMClient
 
-PROMPT_PATH = "prompts/report.yaml"
+SYSTEM_PROMPT = """You are a professional loan underwriting assistant. Your role is to
+generate clear, concise risk assessment reports for loan officers.
 
+Rules:
+- Base your report ONLY on the data provided below. Do not invent information.
+- Do NOT make the final lending decision. That is the loan officer's job.
+- Be specific: mention exact probability, feature values, and SHAP contributions.
+- Use professional financial language but keep it readable.
+- Highlight the top 3 risk factors (both positive and negative).
+- End with a recommendation for the loan officer to review.
+- Use only the plain-language factor names and values provided below.
+  Never output internal codes such as PAY_0, PAY_2, LIMIT_BAL, or BILL_AMT1."""
 
-def _load_prompt(path: str) -> tuple[str, str]:
-    """Load the system prompt and user prompt template from a YAML file.
+USER_TEMPLATE = """LOAN APPLICATION RISK ASSESSMENT
+================================
 
-    Args:
-        path: Path to the YAML prompt file.
+Prediction: {risk} Risk
+Default Probability: {probability:.1%}
 
-    Returns:
-        (system_prompt, user_prompt_template)
-    """
-    with open(path) as f:
-        data = yaml.safe_load(f)
-    prompts = data["report_generation"]
-    return prompts["system_prompt"], prompts["user_prompt_template"]
+APPLICANT DATA
+--------------
+{applicant_data}
+
+FEATURE CONTRIBUTIONS (SHAP)
+----------------------------
+{shap_explanations}
+
+INSTRUCTIONS
+------------
+Generate a professional risk assessment report for the loan officer.
+Structure it as:
+1. Summary — one sentence stating the risk level and probability
+2. Key Risk Factors — the top factors driving this prediction (refer to SHAP values)
+3. Positive Factors — any factors that reduce risk
+4. Recommendation — what the loan officer should review before making a decision"""
 
 
 # Maps Pydantic request fields to the model feature names, so applicant data
@@ -65,11 +83,10 @@ def _format_shap(
 class ReportGenerator:
     """Generates narrative risk reports from model predictions."""
 
-    def __init__(
-        self, llm_client: LLMClient, prompt_path: str = PROMPT_PATH
-    ) -> None:
+    def __init__(self, llm_client: LLMClient) -> None:
         self._llm = llm_client
-        self._system_prompt, self._user_template = _load_prompt(prompt_path)
+        self._system_prompt = SYSTEM_PROMPT
+        self._user_template = USER_TEMPLATE
         logger.info("Report generator initialized")
 
     def generate(

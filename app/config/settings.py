@@ -6,6 +6,7 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        extra="ignore",
     )
 
     # --- Provider Priority ---
@@ -14,28 +15,25 @@ class Settings(BaseSettings):
     # Example: "groq,gemini,openrouter"
     llm_provider_priority: str = "groq,gemini,openrouter"
 
-    # --- Groq ---
+    # --- Groq (free tier, no card; rate-limited) ---
+    # Live free IDs: openai/gpt-oss-20b (fast/cheap), openai/gpt-oss-120b (flagship).
+    # llama-3.3-70b-versatile was shut down Aug 2026.
     groq_api_key: str = ""
-    groq_model: str = "llama-3.3-70b-versatile"
+    groq_model: str = "openai/gpt-oss-20b"
 
-    # --- Gemini ---
+    # --- Gemini (free via AI Studio) ---
+    # gemini-2.5-flash is gated to legacy users; 3.5-flash-lite is the free default.
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.5-flash"
+    gemini_model: str = "gemini-3.5-flash-lite"
 
-    # --- OpenRouter ---
+    # --- OpenRouter (free; no card) ---
+    # openrouter/free auto-routes to a rotating free model so single IDs
+    # going paid/rotating don't break us. Comma-separated, tried in order.
     openrouter_api_key: str = ""
-    # Multiple models supported here because OpenRouter routes to different
-    # underlying providers. If one model is rate-limited, the next may work.
-    # Comma-separated, tried in order.
-    openrouter_models: str = (
-        "google/gemini-2.5-flash,"
-        "meta-llama/llama-3.3-70b-instruct,"
-        "mistralai/mistral-small-3.2-24b-instruct"
-    )
+    openrouter_models: str = "openrouter/free"
 
     # Paths
     model_path: str = "models/model.pkl"
-    storage_path: str = "data/applications.json"
 
     # Logging
     log_level: str = "INFO"

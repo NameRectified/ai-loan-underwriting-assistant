@@ -12,13 +12,12 @@ from loguru import logger
 from app.api.schemas import ErrorResponse, LoanApplication, RiskAssessment
 from app.config.settings import settings
 from app.services.llm_client import LLMClient
-from app.services.pipeline import UnderwritingPipeline
 from app.services.predictor import Predictor
 from app.services.report_generator import ReportGenerator
 
-# Module-level variables: start as None because models/clients load at startup,
-# not at import time. The lifespan function assigns them once the server starts.
-pipeline: Optional[UnderwritingPipeline] = None
+# Module-level state: loaded once at startup via lifespan.
+predictor: Optional[Predictor] = None
+report_generator: Optional[ReportGenerator] = None
 
 
 @asynccontextmanager
@@ -28,27 +27,25 @@ async def lifespan(app: FastAPI):
     Everything before ``yield`` runs once when the server starts.
     Everything after ``yield`` runs once when the server stops.
     """
-    global pipeline
+    global predictor, report_generator
 
     logger.info(f"Loading model from {settings.model_path}")
     predictor = Predictor(settings.model_path)
 
     llm_client = LLMClient()
-    report_generator: Optional[ReportGenerator] = None
     if llm_client.available:
         report_generator = ReportGenerator(llm_client)
         logger.info("LLM report generator initialized")
     else:
+        report_generator = None
         logger.warning("No LLM providers configured — reports will be skipped")
 
-    pipeline = UnderwritingPipeline(
-        predictor=predictor, report_generator=report_generator
-    )
-    logger.info("Underwriting pipeline initialized")
+    logger.info("Server initialized: predict -> explain -> report")
 
     yield
 
-    pipeline = None
+    predictor = None
+    report_generator = None
     logger.info("Shutdown complete.")
 
 
@@ -89,9 +86,20 @@ def index():
 def predict(application: LoanApplication):
     """Submit a loan application for underwriting review.
 
-    Runs the full pipeline: risk prediction → SHAP explanation →
-    LLM report → persistence. Returns the complete risk assessment.
+    Runs prediction → SHAP explanation → LLM report and returns the
+    complete risk assessment.
     """
-    if pipeline is None:
+    if predictor is None:
         raise HTTPException(status_code=503, detail="Pipeline not initialized")
-    return pipeline.process(application)
+
+    assessment = predictor.predict(application)
+
+    if report_generator is not None:
+        try:
+            report = report_generator.generate(application, assessment)
+            assessment.risk_report = report
+        except Exception as exc:
+            logger.warning(f"Report generation failed: {exc}")
+            assessment.risk_report = ""
+
+    return assessment

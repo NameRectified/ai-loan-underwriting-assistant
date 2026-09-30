@@ -96,6 +96,17 @@ class LLMClient:
         """Whether at least one provider is configured."""
         return len(self._providers) > 0
 
+    @staticmethod
+    def _check_retryable(provider: ProviderConfig, resp: httpx.Response) -> bool:
+        """Return True if caller should fall through to the next provider."""
+        if resp.status_code == 429:
+            logger.warning(f"{provider.name} rate-limited (429)")
+            return True
+        if resp.status_code >= 500:
+            logger.warning(f"{provider.name} server error ({resp.status_code})")
+            return True
+        return False
+
     def _call_openai(
         self, provider: ProviderConfig, system: str, user: str
     ) -> Optional[str]:
@@ -115,11 +126,7 @@ class LLMClient:
         }
         with httpx.Client(timeout=_REQUEST_TIMEOUT) as client:
             resp = client.post(provider.api_url, headers=headers, json=body)
-            if resp.status_code == 429:
-                logger.warning(f"{provider.name} rate-limited (429)")
-                return None
-            if resp.status_code >= 500:
-                logger.warning(f"{provider.name} server error ({resp.status_code})")
+            if self._check_retryable(provider, resp):
                 return None
             resp.raise_for_status()
             return resp.json()["choices"][0]["message"]["content"]
@@ -143,29 +150,14 @@ class LLMClient:
         }
         with httpx.Client(timeout=_REQUEST_TIMEOUT) as client:
             resp = client.post(url, json=body)
-            if resp.status_code == 429:
-                logger.warning(f"{provider.name} rate-limited (429)")
-                return None
-            if resp.status_code >= 500:
-                logger.warning(f"{provider.name} server error ({resp.status_code})")
+            if self._check_retryable(provider, resp):
                 return None
             resp.raise_for_status()
             data = resp.json()
             return data["candidates"][0]["content"]["parts"][0]["text"]
 
     def generate(self, system_prompt: str, user_prompt: str) -> str:
-        """Generate text using the first available provider.
-
-        Args:
-            system_prompt: System-level instruction for the LLM.
-            user_prompt: The user's request / context for the LLM.
-
-        Returns:
-            Generated text from the LLM.
-
-        Raises:
-            RuntimeError: If no provider succeeds.
-        """
+        """Try providers in order; return the first successful response."""
         if not self._providers:
             raise RuntimeError("No LLM providers configured")
 

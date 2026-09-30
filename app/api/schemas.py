@@ -4,60 +4,16 @@ from pydantic import BaseModel, Field, model_validator
 
 
 class LoanApplication(BaseModel):
-    """Applicant financial data submitted for underwriting.
+    """7 features the XGBoost model was trained on."""
 
-    All fields match the features the XGBoost model was trained on.
-    """
-
-    limit_bal: float = Field(
-        ..., description="Total credit limit", example=200000
-    )
-    age: int = Field(
-        ..., ge=18, le=120, description="Applicant age in years", example=35
-    )
-    pay_0: int = Field(
-        ...,
-        ge=-2,
-        le=8,
-        description=(
-            "Repayment status last month. "
-            "-2 = no consumption that month, "
-            "-1 = pay duly, 0 = no delay, 1+ = months delayed"
-        ),
-        example=-1,
-    )
-    pay_2: int = Field(
-        ...,
-        ge=-2,
-        le=8,
-        description=(
-            "Repayment status 2 months ago (same scale as pay_0: "
-            "-2 = no consumption, -1 = pay duly, 0 = no delay, 1+ = delayed)"
-        ),
-        example=-1,
-    )
-    pay_3: int = Field(
-        ...,
-        ge=-2,
-        le=8,
-        description=(
-            "Repayment status 3 months ago (same scale as pay_0: "
-            "-2 = no consumption, -1 = pay duly, 0 = no delay, 1+ = delayed)"
-        ),
-        example=-1,
-    )
-    pay_amt1: float = Field(
-        ...,
-        ge=0,
-        description="Amount paid last month",
-        example=5000,
-    )
-    bill_amt1: float = Field(
-        ...,
-        ge=0,
-        description="Bill statement amount last month",
-        example=30000,
-    )
+    limit_bal: float = Field(..., description="Total credit limit")
+    age: int = Field(..., ge=18, le=120, description="Applicant age")
+    # Repayment status: -2 = no usage, -1 = paid duly, 0 = revolving, 1+ = months delayed
+    pay_0: int = Field(..., ge=-2, le=8, description="Repayment status last month")
+    pay_2: int = Field(..., ge=-2, le=8, description="Repayment status 2 months ago")
+    pay_3: int = Field(..., ge=-2, le=8, description="Repayment status 3 months ago")
+    pay_amt1: float = Field(..., ge=0, description="Amount paid last month")
+    bill_amt1: float = Field(..., ge=0, description="Bill amount last month")
 
     @model_validator(mode="after")
     def check_credit_limits(self):
@@ -72,84 +28,29 @@ class LoanApplication(BaseModel):
 
 
 class FeatureContribution(BaseModel):
-    """SHAP explanation for a single feature.
+    """Per-feature SHAP explanation (log-odds units vs baseline)."""
 
-    Shows how much a specific feature value pushed the prediction
-    above or below the baseline (average default probability).
-    Includes human-readable labels so the output is self-explanatory.
-    """
-
-    feature_name: str = Field(
-        ..., description="Feature name (e.g. PAY_0, LIMIT_BAL)", example="PAY_0"
-    )
-    feature_label: str = Field(
-        ..., description="Human-readable feature name", example="Repayment Status (Last Month)"
-    )
-    feature_value: float = Field(
-        ..., description="The actual value the applicant provided", example=-1
-    )
-    value_label: str = Field(
-        ..., description="Human-readable interpretation of the value", example="Paid in full"
-    )
-    shap_value: float = Field(
-        ...,
-        description=(
-            "How much this feature pushed the prediction (log-odds units). "
-            "Positive = increased default risk, Negative = decreased risk."
-        ),
-        example=0.15,
-    )
-    impact: str = Field(
-        ...,
-        description="Direction of impact: increases_risk or decreases_risk",
-        example="decreases_risk",
-    )
-    magnitude: str = Field(
-        ...,
-        description="Plain-language strength and direction",
-        example="Strongly decreases risk",
-    )
+    feature_name: str
+    feature_label: str
+    feature_value: float
+    value_label: str
+    shap_value: float
+    impact: str  # increases_risk | decreases_risk
+    magnitude: str  # e.g. "Strongly decreases risk"
 
 
 class RiskAssessment(BaseModel):
-    """Output of the ML model prediction."""
+    """Model prediction + SHAP explanations + optional LLM report."""
 
-    risk: str = Field(
-        ..., description="Risk category: Low or High", example="Low"
-    )
-    default_probability: float = Field(
-        ...,
-        ge=0.0,
-        le=1.0,
-        description="Predicted probability of default (0-1)",
-        example=0.32,
-    )
-    baseline_probability: float = Field(
-        ...,
-        ge=0.0,
-        le=1.0,
-        description=(
-            "Average default rate in the training population that SHAP "
-            "explanations are measured against"
-        ),
-        example=0.22,
-    )
-    features_used: list[str] = Field(
-        ..., description="Feature names used by the model"
-    )
-    shap_explanations: list[FeatureContribution] = Field(
-        ..., description="Per-feature SHAP contributions explaining the prediction"
-    )
-    risk_report: str = Field(
-        "",
-        description=(
-            "Narrative risk assessment report generated by an LLM. "
-            "Only present if an LLM provider is configured."
-        ),
-    )
+    risk: str  # Low | High
+    default_probability: float = Field(..., ge=0.0, le=1.0)
+    baseline_probability: float = Field(..., ge=0.0, le=1.0)
+    features_used: list[str]
+    shap_explanations: list[FeatureContribution]
+    risk_report: str = ""
 
 
 class ErrorResponse(BaseModel):
     """Standard error response."""
 
-    detail: str = Field(..., description="Error message")
+    detail: str
